@@ -10,7 +10,7 @@ module.exports = {
 
 function createBenchmark(fn, configs, options) {
   process.nextTick(go, fn, configs, options);
-  return { http };
+  return { http, start, end };
 }
 
 function go(fn, configs, options) {
@@ -64,9 +64,26 @@ function http({ path, connections, duration }, finish) {
   function exit() {
     const match = stdout.match(/Requests\/sec:[ \t]+([0-9.]+)/)
     const throughput = match && +match[1];
-    console.log({ path, connections, duration }, throughput);
+    report(throughput);
     finish();
   }
+}
+
+function start() {
+  start.time = process.hrtime.bigint();
+}
+
+start.time = undefined;
+
+function end(operations) {
+  const time = process.hrtime.bigint();
+  const elapsed = time - start.time;
+  const rate = operations / (Number(elapsed) / 1e9);
+  report(rate);
+}
+
+function report(rate) {
+  console.log(process.argv.slice(1).join(" "), rate);
 }
 
 function permute(entries, state = [], accu = []) {
